@@ -5,6 +5,8 @@ Project Name: final-part1
 
 # Description
 In this project, we will use a finger print scanner.
+THis looks very important: https://github.com/adafruit/Adafruit-Fingerprint-Sensor-Library
+
 
 ## Expected Outcome
 Coming soon.
