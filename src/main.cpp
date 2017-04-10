@@ -4,15 +4,16 @@
 	Licensed for non-commercial use, must include this license message
 	basically, Feel free to hack away at it, but just give me credit for my work =)
 	TLDR; Wil Wheaton's Law
-	This simple sketch turns the LED on and off similar to the Arduino blink sketch.
-	It is used to show that communications are working.
+	This sketch will attempt to identify a previously enrolled fingerprint.
 */
 
 #include "FPS_GT511C3.h"
 #include "SoftwareSerial.h"
 #include "lcd.h"
 #include "timer.h"
-#include "enroll.h"
+#include "macros.h"
+#include <Arduino.h>
+#include <avr/io.h>
 
 // Hardware setup - FPS connected to:
 //	  digital pin 4(arduino rx, fps tx)
@@ -21,46 +22,18 @@
 
 FPS_GT511C3 fps(10, 11);
 void Enroll();
-
+// PORTH |= (1 << PORTH3);
 void setup()
 {
-	initTimer1();
-	initLCD();
-	Serial.begin(9600);
+	Serial.begin(BAUD_RATE);
+  initTimer1();
+  initLCD();
 
-
+	delay(100);
 	fps.Open();
 	fps.SetLED(true);
-	Enroll();
-	delay(100);
-}
-
-
-void loop()
-{
-	int count = 0;
-	// Identify fingerprint test
-	if (fps.IsPressFinger())
-	{
-		fps.CaptureFinger(false);
-		int id = fps.Identify1_N();
-		if (id <200)
-		{
-			writeString("Soleniod Unlock     ");//Serial.print("Verified ID:");
-			//Serial.println(id);
-
-		}
-		else
-		{
-			writeString("Finger not found       ");//Serial.println("Finger not found");
-			count++;
-		}
-	}
-	else
-	{
-		writeString("Please press finger         ");//Serial.println("Please press finger");
-	}
-	delay(100);
+  Enroll();
+  delay(1000);
 }
 
 void Enroll()
@@ -85,37 +58,65 @@ void Enroll()
 	int iret = 0;
 	if (bret != false)
 	{
-		writeString("Remove finger       ");//Serial.println("Remove finger");
+		writeString("Remove finger         ");//Serial.println("Remove finger");
 		fps.Enroll1();
 		while(fps.IsPressFinger() == true) delay(100);
-		writeString("Pres same finger again       ");//Serial.println("Press same finger again");
+		writeString("Press same finger again        ");//Serial.println("Press same finger again");
 		while(fps.IsPressFinger() == false) delay(100);
 		bret = fps.CaptureFinger(true);
 		if (bret != false)
 		{
-			writeString("Remove finger      ");//Serial.println("Remove finger");
+			writeString("Remove finger          ");//Serial.println("Remove finger");
 			fps.Enroll2();
 			while(fps.IsPressFinger() == true) delay(100);
-			writeString("Press same finger yet again       ");//Serial.println("Press same finger yet again");
+			writeString("Press finger AGAIN      ");//Serial.println("Press same finger yet again");
 			while(fps.IsPressFinger() == false) delay(100);
 			bret = fps.CaptureFinger(true);
 			if (bret != false)
 			{
 				writeString("Remove finger       ");//Serial.println("Remove finger");
-				iret = fps.Enroll3();
+				//iret = fps.Enroll3();
+        delay(1000);
 				if (iret == 0)
 				{
-					writeString("Enrolling Successfull       ");//Serial.println("Enrolling Successfull");
+					writeString("Enrolling Successfull    ");//Serial.println("Enrolling Successfull");
 				}
 				else
 				{
-					writeString("Enrolling Failed       ");//Serial.print("Enrolling Failed with error code:");
-					Serial.println(iret);
+					writeString("Enrolling FAILED :(     ");//Serial.print("Enrolling Failed with error code:");
+					//Serial.println(iret);
 				}
 			}
-			else writeString("Failed on 3       ");//Serial.println("Failed to capture third finger");
+			else writeString("Failed on 3rd      ");//Serial.println("Failed to capture third finger");
 		}
-		else writeString("Failed on 2       ");//Serial.println("Failed to capture second finger");
+		else writeString("Failed on 2nd       ");//Serial.println("Failed to capture second finger");
 	}
-	else writeString("Failed on 1     ");//Serial.println("Failed to capture first finger");
+	else writeString("Failed on 1st        ");//Serial.println("Failed to capture first finger");
+}
+
+void loop()
+{
+	// Identify fingerprint test
+	if (fps.IsPressFinger())
+	{
+		fps.CaptureFinger(false);
+		int id = fps.Identify1_N();
+		if (id < ID_THRESH)
+		{
+			writeString("Verified ID       ");//Serial.print("Verified ID:");
+			//Serial.println(id);
+      PORTH &= ~(1 << PORTH3);
+      delay(100);
+		}
+		else
+		{
+			writeString("Finger not found      ");//Serial.println("Finger not found");
+		}
+	}
+	else
+	{
+		writeString("Please press finger      ");//Serial.println("Please press finger");
+    PORTH |= (1 << PORTH3);
+	}
+	delay(100);
 }
