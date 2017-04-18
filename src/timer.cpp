@@ -3,46 +3,64 @@
 
 #include "timer.h"
 #include <Arduino.h>
-#include <avr/io.h>
 
 /* Initialize timer 1, you should not turn the timer on here. You will need to
 * use CTC mode
 */
 void initTimer1(){
-  DDRH |= (1 << DDH3);
- // set the timer mode to be "CTC"
- TCCR1A &= ~(1 << WGM10 | 1 << WGM11);
- TCCR1B &= ~(1 << WGM13);
- TCCR1B |= (1 << WGM12);
+  //CTC TIMER 1 AT /64
+  TCCR1A &= ~(1 << WGM10 | 1 << WGM11);
+  TCCR1B |= (1 << WGM12);
+  TCCR1B &= ~(1 << WGM13);
 
- // Turn on the timer // this is 8...
- TCCR1B &= ~(1 << CS10 | 1 << CS12);
- TCCR1B |= (1 << CS11);
- PORTH |= (1 << PORTH3);
+TCCR1B &= ~(1 << CS10 | 1 << CS11 | 1 << CS12);
+
+}
+
+
+
+void delayMs(unsigned int delay)
+{
+  TCNT1H = 0x00;
+  TCNT1L = 0x00;
+
+  OCR1A = (250 * delay) - 1;
+
+  // Turn on the timer
+  TCCR1B |= (1 << CS10 | 1 << CS11);
+  TCCR1B &= ~(1 << CS12);
+
+  while (!(TIFR1 & (1 << OCF1A)))
+  {
+
+  }
+  // Clear the OCF1A flag
+  TIFR1 |= (1 << OCF1A);
+  // Turn off the timer
+  TCCR1B &= ~(1 << CS10 | 1 << CS11 | 1 << CS12);
 }
 
 /* This delays the program an amount specified by unsigned int delay.
 */
 void delayUs(unsigned int delay){
 
- unsigned int ticks = 2 * delay;  // got 2 from Nick
- // clear the timer
- TCNT1H = 0; // hi
- TCNT1L = 0; // lo
+  // clear the timer
+  TCNT1H = 0x00;
+  TCNT1L = 0x00;
+  // calculate the TOP value and assign it to OCR1A
 
- // calculate the TOP value and assign it to OCR1A
- OCR1AH = ticks >> 8; // "top" 8 bits of delay
- OCR1AL = ticks & 0x00FF; // "lower" 8 bits of delay
+  OCR1A = (16 * delay) - 1;
 
- TCCR1B &= ~(1 << CS10 | 1 << CS12);
- TCCR1B |= (1 << CS11);
+  // Turn on the timer
+  TCCR1B |= (1 << CS10);
+  TCCR1B &= ~(1 << CS11 | 1 << CS12); // 0 div
 
- // Do nothing while the OCF1A flag is not up
- while (!(TIFR1 & (1 << OCF1A)));
+  while (!(TIFR1 & (1 << OCF1A)))
+  {
 
- // Clear the OCF1A flag
- TIFR1 |= (1 << OCF1A);
-
- // Turn off the timer
- TCCR1B &= ~(1 << CS10 | 1 << CS12 | 1 << CS11);
+  }
+  // Clear the OCF1A flag
+  TIFR1 |= (1 << OCF1A);
+  // Turn off the timer
+  TCCR1B &= ~(1 << CS10 | 1 << CS11 | 1 << CS12);
 }

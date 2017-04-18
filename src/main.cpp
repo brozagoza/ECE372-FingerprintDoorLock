@@ -12,6 +12,7 @@
 #include "lcd.h"
 #include "timer.h"
 #include "macros.h"
+#include "solenoid.h"
 #include <Arduino.h>
 #include <avr/io.h>
 
@@ -32,7 +33,7 @@ void setup()
 	delay(100);
 	fps.Open();
 	fps.SetLED(true);
-  Enroll();
+	Enroll();
   delay(1000);
 }
 
@@ -51,47 +52,47 @@ void Enroll()
 	fps.EnrollStart(enrollid);
 
 	// enroll
-	writeString("Press finger to Enroll     ");//Serial.print("Press finger to Enroll #");
+	writeString("Press finger to Enroll");//Serial.print("Press finger to Enroll #");
 	//Serial.println(enrollid);
 	while(fps.IsPressFinger() == false) delay(100);
 	bool bret = fps.CaptureFinger(true);
 	int iret = 0;
 	if (bret != false)
 	{
-		writeString("Remove finger         ");//Serial.println("Remove finger");
+		writeString("Remove finger");//Serial.println("Remove finger");
 		fps.Enroll1();
 		while(fps.IsPressFinger() == true) delay(100);
-		writeString("Press same finger again        ");//Serial.println("Press same finger again");
+		writeString("Press same finger again");//Serial.println("Press same finger again");
 		while(fps.IsPressFinger() == false) delay(100);
 		bret = fps.CaptureFinger(true);
 		if (bret != false)
 		{
-			writeString("Remove finger          ");//Serial.println("Remove finger");
+			writeString("Remove finger");//Serial.println("Remove finger");
 			fps.Enroll2();
 			while(fps.IsPressFinger() == true) delay(100);
-			writeString("Press finger AGAIN      ");//Serial.println("Press same finger yet again");
+			writeString("Press same finger yet again");//Serial.println("Press same finger yet again");
 			while(fps.IsPressFinger() == false) delay(100);
 			bret = fps.CaptureFinger(true);
 			if (bret != false)
 			{
-				writeString("Remove finger       ");//Serial.println("Remove finger");
-				//iret = fps.Enroll3();
+				writeString("Remove finger");//Serial.println("Remove finger");
+				iret = fps.Enroll3();
         delay(1000);
 				if (iret == 0)
 				{
-					writeString("Enrolling Successfull    ");//Serial.println("Enrolling Successfull");
+					writeString("Enrolling Successfull");//Serial.println("Enrolling Successfull");
 				}
 				else
 				{
-					writeString("Enrolling FAILED :(     ");//Serial.print("Enrolling Failed with error code:");
+					writeString("Enrolling FAILED");//Serial.print("Enrolling Failed with error code:");
 					//Serial.println(iret);
 				}
 			}
-			else writeString("Failed on 3rd      ");//Serial.println("Failed to capture third finger");
+			else writeString("Failed on 3rd");//Serial.println("Failed to capture third finger");
 		}
-		else writeString("Failed on 2nd       ");//Serial.println("Failed to capture second finger");
+		else writeString("Failed on 2nd");//Serial.println("Failed to capture second finger");
 	}
-	else writeString("Failed on 1st        ");//Serial.println("Failed to capture first finger");
+	else writeString("Failed on 1st");//Serial.println("Failed to capture first finger");
 }
 
 void loop()
@@ -103,20 +104,20 @@ void loop()
 		int id = fps.Identify1_N();
 		if (id < ID_THRESH)
 		{
-			writeString("Verified ID       ");//Serial.print("Verified ID:");
+			writeString("Verified ID");//Serial.print("Verified ID:");
 			//Serial.println(id);
-      PORTH &= ~(1 << PORTH3);
+
       delay(100);
 		}
 		else
 		{
-			writeString("Finger not found      ");//Serial.println("Finger not found");
+			writeString("Finger not found");//Serial.println("Finger not found");
 		}
 	}
 	else
 	{
-		writeString("Please press finger      ");//Serial.println("Please press finger");
-    PORTH |= (1 << PORTH3);
+		writeString("Please press finger");//Serial.println("Please press finger");
+		solenoid_lock();
 	}
 	delay(100);
 }
