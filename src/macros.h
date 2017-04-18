@@ -6,5 +6,6 @@
 #define BAUD_RATE 9600
 #define ID_THRESH 200
 
+void Enroll();
 
 #endif MACROS_H

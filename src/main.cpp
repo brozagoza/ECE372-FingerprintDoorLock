@@ -13,6 +13,7 @@
 #include "timer.h"
 #include "macros.h"
 #include "solenoid.h"
+#include "switch.h"
 #include <Arduino.h>
 #include <avr/io.h>
 
@@ -22,21 +23,73 @@
 //		this brings the 5v tx line down to about 3.2v so we dont fry our fps
 
 FPS_GT511C3 fps(10, 11);
-void Enroll();
+unsigned int count = 0;
+
 // PORTH |= (1 << PORTH3);
 void setup()
 {
 	Serial.begin(BAUD_RATE);
   initTimer1();
   initLCD();
+	sei();
 
 	delay(100);
 	fps.Open();
+
+	fps.DeleteAll(); // clear all at first
+
 	fps.SetLED(true);
 	Enroll();
   delay(1000);
 }
 
+
+void loop()
+{
+
+	// Identify fingerprint test
+	if (fps.IsPressFinger())
+	{
+		fps.CaptureFinger(false);
+		int id = fps.Identify1_N();
+		if (id < ID_THRESH)
+		{
+			writeString("Verified ID");//Serial.print("Verified ID:");
+			//Serial.println(id);
+
+      delay(100);
+		}
+		else
+		{
+			count++;
+			writeString("Finger not found");//Serial.println("Finger not found");
+
+		}
+	}
+	else
+	{
+		if (count > 2) {
+			writeString("LOVE LOCKDOWN");
+			while (true);
+		}
+		writeString("Please press finger");//Serial.println("Please press finger");
+		solenoid_lock();
+
+	}
+	delay(1000);
+}
+
+
+// ISR(PCINT0_vect)
+// {
+//   writeString("Interrupt");
+//
+// } // end ISR
+
+
+/*
+*	Code to enroll another finger print ya feel dawg
+*/
 void Enroll()
 {
 	// Enroll test
@@ -50,9 +103,11 @@ void Enroll()
 		if (usedid==true) enrollid++;
 	}
 	fps.EnrollStart(enrollid);
+	const char t_s[80];
+	strcpy(t_s, "Press finger to Enroll at ID");
 
 	// enroll
-	writeString("Press finger to Enroll");//Serial.print("Press finger to Enroll #");
+	writeString(t_s);//Serial.print("Press finger to Enroll #");
 	//Serial.println(enrollid);
 	while(fps.IsPressFinger() == false) delay(100);
 	bool bret = fps.CaptureFinger(true);
@@ -93,31 +148,4 @@ void Enroll()
 		else writeString("Failed on 2nd");//Serial.println("Failed to capture second finger");
 	}
 	else writeString("Failed on 1st");//Serial.println("Failed to capture first finger");
-}
-
-void loop()
-{
-	// Identify fingerprint test
-	if (fps.IsPressFinger())
-	{
-		fps.CaptureFinger(false);
-		int id = fps.Identify1_N();
-		if (id < ID_THRESH)
-		{
-			writeString("Verified ID");//Serial.print("Verified ID:");
-			//Serial.println(id);
-
-      delay(100);
-		}
-		else
-		{
-			writeString("Finger not found");//Serial.println("Finger not found");
-		}
-	}
-	else
-	{
-		writeString("Please press finger");//Serial.println("Please press finger");
-		solenoid_lock();
-	}
-	delay(100);
 }
