@@ -80,7 +80,7 @@ void clearscreen()
 void writeDataWithUsDelay(unsigned char data, unsigned int delay){
 
 
-  if(count == 15)
+  if(count == 16)
   {
     count = 64;
   }

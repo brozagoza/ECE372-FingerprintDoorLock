@@ -7,4 +7,4 @@ void solenoid_unlock();
 void solenoid_lock();
 
 
-#endif SOLENOID_H
+#endif
